@@ -89,20 +89,20 @@ class Template(TropoTemplate):
         self.parameters = OrderedDict()
         self.resources = OrderedDict()
 
-    def iref(self, key, val=None):
+    def iref(self, key, default=None):
         if key not in self.parameters:
-            if val:
-                self.parameters[key] = Parameter(key, Type='String', Default=val)
+            if default:
+                self.parameters[key] = Parameter(key, Type='String', Default=default)
             else:
                 self.parameters[key] = Parameter(key, Type='String')
         return Ref(self.parameters[key])
 
-    def imap(self, mapping, key_lvl1, key_lvl2, val):
+    def imap(self, mapping, key_lvl1, key_lvl2, value):
         if mapping not in self.mappings:
             self.mappings[mapping] = {}
         if key_lvl1 not in self.mappings[mapping]:
             self.mappings[mapping][key_lvl1] = {}
-        self.mappings[mapping][key_lvl1][key_lvl2] = val
+        self.mappings[mapping][key_lvl1][key_lvl2] = value
         return FindInMap(mapping, key_lvl1, key_lvl2)
 
     def __iadd__(self, other):
@@ -146,7 +146,7 @@ class Template(TropoTemplate):
         if self.outputs:
             t['Outputs'] = self.outputs
         t['Resources'] = self.resources
-        return json.dumps(t, cls=awsencode, indent=indent, separators=separators)
+        return json.dumps(t, cls=awsencode, indent=indent, separators=separators, sort_keys=sort_keys)
 
 
 class T(string.Template):
@@ -155,7 +155,6 @@ class T(string.Template):
 
 
 def readify(f):
-    out = ""
     if hasattr(f, 'read'):
         out = f.read()
     else:
@@ -257,7 +256,7 @@ def security_group_rules(inp):
             ingress.append(sgr)
         elif pieces[0] == 'egress':
             egress.append(sgr)
-    return (ingress, egress)
+    return ingress, egress
 
 
 def substitute_file(path, substitutions={}):
@@ -278,11 +277,11 @@ def security_group(name, inp, vpc, substitutions={}, description=""):
         description = name
 
     return ec2.SecurityGroup(
-            name,
-            GroupDescription=description,
-            SecurityGroupEgress=egress,
-            SecurityGroupIngress=ingress,
-            VpcId=Ref(vpc)
+        name,
+        GroupDescription=description,
+        SecurityGroupEgress=egress,
+        SecurityGroupIngress=ingress,
+        VpcId=Ref(vpc)
     )
 
 
