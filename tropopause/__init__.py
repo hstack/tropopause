@@ -272,7 +272,7 @@ def substitute(inp, substitutions={}):
     return out
 
 
-def security_group(name, inp, vpc, substitutions={}, description=""):
+def security_group(name, inp, vpc_id, substitutions={}, description=""):
     inp = readify(inp)
     ingress, egress = security_group_rules(substitute(inp, substitutions))
 
@@ -284,7 +284,7 @@ def security_group(name, inp, vpc, substitutions={}, description=""):
         GroupDescription=description,
         SecurityGroupEgress=egress,
         SecurityGroupIngress=ingress,
-        VpcId=Ref(vpc)
+        VpcId=vpc_id
     )
 
 
