@@ -18,6 +18,7 @@ DNS_SUFFIXES = {
     'ap-northeast-2': 'ap-northeast-2.compute.internal',
     'ap-southeast-1': 'ap-southeast-1.compute.internal',
     'ap-southeast-2': 'ap-southeast-2.compute.internal',
+    'ap-south-1': 'ap-south-1.compute.internal',
     'sa-east-1': 'sa-east-1.compute.internal',
 }
 
@@ -74,7 +75,9 @@ DISKS_PER_INSTANCE_TYPE = {
     't2.large': 0,
     't2.medium': 0,
     't2.micro': 0,
+    't2.nano': 0,
     't2.small': 0,
+    'x1.32xlarge': 2,
 }
 
 
