@@ -181,10 +181,10 @@ def network_acls(name, inp, mangle_name=True):
             continue
         acl_props = {
             'NetworkAclId': Ref(name),
-            'RuleNumber': pieces[1],
-            'Protocol': pieces[2],
+            'RuleNumber': int(pieces[1]),
+            'Protocol': int(pieces[2]),
             'RuleAction': pieces[3],
-            'CidrBlock': pieces[4],
+            'CidrBlock': fix_refs(pieces[4]),
             'Egress': pieces[6]
         }
         if pieces[5] != '-':
