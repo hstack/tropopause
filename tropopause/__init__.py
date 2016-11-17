@@ -318,27 +318,27 @@ def route_name(prefix, i=None, az_i=None):
     return net_name(prefix, "Route", i, az_i)
 
 
-def split_content(s, fixrefs=True):
-    pattern = r'(Ref\([a-zA-Z0-9:]*\)|GetAtt\([a-zA-Z0-9:]*,\s*[a-zA-Z0-9:]*\))'
-    lines = [l + "\n" for l in s.split("\n")]
-    pieces = [re.split(pattern, l) for l in lines]
-    flatten = [i for sl in pieces for i in sl]
-
-    def replace_ref(t):
-        if re.match(pattern, t):
-            if t[0:3] == "Ref":
-                return Ref(t[4:-1])
-            else:
-                pattern2 = r'GetAtt\(([a-zA-Z0-9:]*),\s*([a-zA-Z0-9:]*)\)'
-                tmp = re.search(pattern2, t)
-                if tmp and len(tmp.groups(1)) == 2:
-                    return GetAtt(tmp.groups(1)[0], tmp.groups(1)[1])
-                else:
-                    raise "ERROR parsing string: " + t
+REFS_PATTERN = r'(Ref\([a-zA-Z0-9:]*\)|GetAtt\([a-zA-Z0-9:]*,\s*[a-zA-Z0-9:]*\))'
+def fix_refs(t):
+    if re.match(REFS_PATTERN, t):
+        if t[0:3] == "Ref":
+            return Ref(t[4:-1])
         else:
-            return t
+            pattern2 = r'GetAtt\(([a-zA-Z0-9:]*),\s*([a-zA-Z0-9:]*)\)'
+            tmp = re.search(pattern2, t)
+            if tmp and len(tmp.groups(1)) == 2:
+                return GetAtt(tmp.groups(1)[0], tmp.groups(1)[1])
+            else:
+                raise "ERROR parsing string: " + t
+    else:
+        return t
 
-    return [replace_ref(x) for x in flatten]
+
+def split_content(s, fixrefs=True):
+    lines = [l + "\n" for l in s.split("\n")]
+    pieces = [re.split(REFS_PATTERN, l) for l in lines]
+    flatten = [i for sl in pieces for i in sl]
+    return [fix_refs(x) for x in flatten]
 
 
 def make_content(s, fixrefs=True):
