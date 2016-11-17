@@ -169,7 +169,7 @@ def readify(f):
     return out
 
 
-def network_acls(name, inp):
+def network_acls(name, inp, mangle_name=True):
     acl_spec = readify(inp)
 
     acl_entries = []
@@ -193,7 +193,11 @@ def network_acls(name, inp):
         if len(pieces) > 7:
             icmp = pieces[7].split(':')
             acl_props['Icmp'] = ec2.ICMP(Code=int(icmp[0]), Type=int(icmp[1]))
-        acl_entries.append(ec2.NetworkAclEntry('%s%sEntry' % (pieces[0], name), **acl_props))
+
+        acl_name = pieces[0]
+        if mangle_name:
+            acl_name = '%s%sEntry' % (pieces[0], name)
+        acl_entries.append(ec2.NetworkAclEntry(acl_name, **acl_props))
     return acl_entries
 
 
