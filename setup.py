@@ -15,8 +15,7 @@ setup(
     license='MIT',
     packages=['tropopause'],
     install_requires=[
-        'troposphere',
-        'awacs'
+        'troposphere==1.9.2'
     ],
     zip_safe=True
 )

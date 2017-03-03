@@ -1,11 +1,10 @@
-import json
 import os
 import re
 import string
 from collections import OrderedDict
 
 import troposphere.ec2 as ec2
-from troposphere import FindInMap, Output, Condition, AWSObject, Ref, GetAtt, Parameter, Base64, Join, awsencode
+from troposphere import FindInMap, Output, Condition, AWSObject, Ref, GetAtt, Parameter, Base64, Join, encode_to_dict
 from troposphere import Template as TropoTemplate
 
 DNS_SUFFIXES = {
@@ -132,7 +131,7 @@ class Template(TropoTemplate):
             return out[0]
         return out
 
-    def to_json(self, indent=4, sort_keys=False, separators=(',', ': ')):
+    def to_dict(self):
         t = OrderedDict()
         if self.version:
             t['AWSTemplateFormatVersion'] = self.version
@@ -149,7 +148,7 @@ class Template(TropoTemplate):
         if self.outputs:
             t['Outputs'] = self.outputs
         t['Resources'] = self.resources
-        return json.dumps(t, cls=awsencode, indent=indent, separators=separators, sort_keys=sort_keys)
+        return encode_to_dict(t)
 
 
 class T(string.Template):
