@@ -1,9 +1,8 @@
 import os
 import re
 import string
-from collections import OrderedDict
-
 import troposphere.ec2 as ec2
+from collections import OrderedDict
 from troposphere import FindInMap, Output, Condition, AWSObject, Ref, GetAtt, Parameter, Base64, Join, encode_to_dict
 from troposphere import Template as TropoTemplate
 
@@ -342,6 +341,8 @@ def route_name(prefix, i=None, az_i=None):
 
 
 REFS_PATTERN = r'(Ref\([a-zA-Z0-9:]*\)|GetAtt\([a-zA-Z0-9:]*,\s*[a-zA-Z0-9:]*\))'
+
+
 def fix_refs(t):
     if re.match(REFS_PATTERN, t):
         if t[0:3] == "Ref":
@@ -357,15 +358,15 @@ def fix_refs(t):
         return t
 
 
-def split_content(s, fixrefs=True):
+def split_content(s):
     lines = [l + "\n" for l in s.split("\n")]
     pieces = [re.split(REFS_PATTERN, l) for l in lines]
     flatten = [i for sl in pieces for i in sl]
     return [fix_refs(x) for x in flatten]
 
 
-def make_content(s, fixrefs=True):
-    return Join('', split_content(s, fixrefs))
+def make_content(s):
+    return Join('', split_content(s))
 
 
 def make_user_data(s):
