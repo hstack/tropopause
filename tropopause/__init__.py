@@ -198,28 +198,41 @@ def network_acls(name, inp, mangle_name=True):
     for line in acl_spec.splitlines():
         if not line or line.startswith('#'):
             continue
-        pieces = re.split('\s+', line)
+        pieces = re.split('\s+(?![^[]*\])', line)
         if len(pieces) < 7:
             continue
-        acl_props = {
-            'NetworkAclId': Ref(name),
-            'RuleNumber': int(pieces[1]),
-            'Protocol': int(pieces[2]),
-            'RuleAction': pieces[3],
-            'CidrBlock': fix_refs(pieces[4]),
-            'Egress': pieces[6]
-        }
-        if pieces[5] != '-':
-            port_range = pieces[5].split(':')
-            acl_props['PortRange'] = ec2.PortRange(From=port_range[0], To=port_range[1])
-        if len(pieces) > 7:
-            icmp = pieces[7].split(':')
-            acl_props['Icmp'] = ec2.ICMP(Code=int(icmp[0]), Type=int(icmp[1]))
 
-        acl_name = pieces[0]
-        if mangle_name:
-            acl_name = '%s%sEntry' % (pieces[0], name)
-        acl_entries.append(ec2.NetworkAclEntry(acl_name, **acl_props))
+        def network_acl_add(cidr_block, cidr_block_idx=None):
+            acl_props = {
+                'NetworkAclId': Ref(name),
+                'RuleNumber': int(pieces[1]) + cidr_block_idx if cidr_block_idx else int(pieces[1]),
+                'Protocol': int(pieces[2]),
+                'RuleAction': pieces[3],
+                'CidrBlock': fix_refs(cidr_block),
+                'Egress': pieces[6]
+            }
+            if pieces[5] != '-':
+                port_range = pieces[5].split(':')
+                acl_props['PortRange'] = ec2.PortRange(From=port_range[0], To=port_range[1])
+            if len(pieces) > 7:
+                icmp = pieces[7].split(':')
+                acl_props['Icmp'] = ec2.ICMP(Code=int(icmp[0]), Type=int(icmp[1]))
+
+            acl_name = pieces[0]
+            if mangle_name:
+                acl_name = '%s%sEntry' % (pieces[0], name)
+                if cidr_block_idx:
+                    acl_name = '%s%s' % (acl_name, cidr_block_idx + 1)
+            acl_entries.append(ec2.NetworkAclEntry(acl_name, **acl_props))
+
+        pieces[4] = pieces[4].replace('[','').replace(']','').split(',')
+        if isinstance(pieces[4], list):
+            if len(pieces[4]) > 1:
+                for cidr_block_idx, cidr_block in enumerate(pieces[4]):
+                    network_acl_add(cidr_block.strip().strip('\''), cidr_block_idx)
+            else:
+                network_acl_add(pieces[4][0].strip().strip('\''))
+
     return acl_entries
 
 
@@ -265,26 +278,34 @@ def security_group_rules(inp):
     for line in sg_spec.splitlines():
         if not line or line.startswith('#') or line.strip() == "":
             continue
-        pieces = re.split('\s+', line)
-        port_range = pieces[3].split(':')
-        kwargs = {
-            "FromPort": int(port_range[0]),
-            "ToPort": int(port_range[1]),
-            "IpProtocol": pieces[2]
-        }
-        if re.match(r'^[0-9\.\/]*$', pieces[1]):
-            kwargs["CidrIp"] = pieces[1]
-        else:
-            if pieces[0] == 'ingress':
-                kwargs["SourceSecurityGroupId"] = Ref(pieces[1])
-            else:
-                kwargs["DestinationSecurityGroupId"] = Ref(pieces[1])
 
-        sgr = ec2.SecurityGroupRule(**kwargs)
-        if pieces[0] == 'ingress':
-            ingress.append(sgr)
-        elif pieces[0] == 'egress':
-            egress.append(sgr)
+        pieces = re.split('\s+(?![^[]*\])', line)
+        port_range = pieces[3].split(':')
+
+        def security_group_add(ip):
+            kwargs = {
+                "FromPort": int(port_range[0]),
+                "ToPort": int(port_range[1]),
+                "IpProtocol": pieces[2]
+            }
+            if re.match(r'^[0-9\.\/]*$', ip):
+                kwargs["CidrIp"] = ip
+            else:
+                if pieces[0] == 'ingress':
+                    kwargs["SourceSecurityGroupId"] = Ref(ip)
+                else:
+                    kwargs["DestinationSecurityGroupId"] = Ref(ip)
+
+            sgr = ec2.SecurityGroupRule(**kwargs)
+            if pieces[0] == 'ingress':
+                ingress.append(sgr)
+            elif pieces[0] == 'egress':
+                egress.append(sgr)
+
+        pieces[1] = pieces[1].replace('[','').replace(']','').split(',')
+        if isinstance(pieces[1], list):
+            for ip in list(pieces[1]):
+                security_group_add(ip.strip().strip('\''))
     return ingress, egress
 
 
