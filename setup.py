@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='tropopause',
-    version='0.9.2',
+    version='0.9.3',
     description='Extra utilities for troposphere',
     classifiers=[
         'Development Status :: 3 - Alpha',
