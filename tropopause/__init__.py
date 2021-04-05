@@ -145,7 +145,7 @@ class Template(TropoTemplate):
 
     def find(self, needle, first=True):
         out = []
-        for k, v in self.ordered_resources.items():
+        for k, v in list(self.ordered_resources.items()):
             if type(needle) != str and isinstance(v, needle):
                 out.append(v)
             elif type(needle) == str and re.match(needle, v.title):
